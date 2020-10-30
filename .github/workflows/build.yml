@@ -135,10 +135,10 @@ jobs:
           .\make_win_lua54_editor.bat
           .\make_win32_lua53.bat
           .\make_win64_lua53.bat
-        # .\make_uwp.bat
-        # .\make_uwp_lua54.bat
           .\make_win32_editor_lua53.bat
           .\make_win64_editor_lua53.bat
+        # .\make_uwp.bat
+        # .\make_uwp_lua54.bat
         # .\make_win32_luajit.bat
         # .\make_win64_luajit.bat
       - name: Upload
