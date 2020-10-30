@@ -102,6 +102,7 @@ jobs:
           ./make_osx_lua54.sh
           ./make_osx_lua53.sh
           ./make_osx_editor_lua53.sh
+          ./make_osx_editor_lua54.sh
         # ./make_osx_luajit.sh
       - name: Upload
         uses: actions/upload-artifact@v2
@@ -131,6 +132,7 @@ jobs:
         run: |
           cd build
           .\make_win_lua54.bat
+          .\make_win_lua54_editor.bat
           .\make_uwp_lua54.bat
           .\make_win32_lua53.bat
           .\make_win64_lua53.bat
