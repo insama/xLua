@@ -40,26 +40,26 @@ jobs:
       #   with:
       #     path: ./build/plugin_luajit/**/*
       #     name: plugin_luajit
-  linux:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Build
-        run: |
-          cd build
-          cd luac
-          ./make_unix_lua54.sh
-          ./make_unix.sh
-      - name: Upload
-        uses: actions/upload-artifact@v2
-        with:
-          path: ./build/luac/luac_lua54/**/*
-          name: luac_lua54
-      - name: Upload53
-        uses: actions/upload-artifact@v2
-        with:
-          path: ./build/luac/luac_lua53/**/*
-          name: luac_lua53
+  # linux:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Build
+  #       run: |
+  #         cd build
+  #         cd luac
+  #         ./make_unix_lua54.sh
+  #         ./make_unix.sh
+  #     - name: Upload
+  #       uses: actions/upload-artifact@v2
+  #       with:
+  #         path: ./build/luac/luac_lua54/**/*
+  #         name: luac_lua54
+  #     - name: Upload53
+  #       uses: actions/upload-artifact@v2
+  #       with:
+  #         path: ./build/luac/luac_lua53/**/*
+  #         name: luac_lua53
   ios:
     runs-on: macos-latest
 
@@ -98,6 +98,9 @@ jobs:
           ./make_osx_lua53.sh
           ./make_osx_editor_lua53.sh
           ./make_osx_editor_lua54.sh
+          cd luac
+          ./make_unix_lua54.sh
+          ./make_unix.sh
         # ./make_osx_luajit.sh
       - name: Upload
         uses: actions/upload-artifact@v2
@@ -108,7 +111,17 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           path: ./build/plugin_lua53/**/*
-          name: plugin_lua53   
+          name: plugin_lua53 
+      - name: Upload_luac_53
+        uses: actions/upload-artifact@v2
+        with:
+          path: ./build/luac/luac_lua53/**/*
+          name: luac_lua53  
+      - name: Upload_luac_54
+        uses: actions/upload-artifact@v2
+        with:
+          path: ./build/luac/luac_lua54/**/*
+          name: luac_lua54  
       # - name: UploadJit
       #   uses: actions/upload-artifact@v2
       #   with:
