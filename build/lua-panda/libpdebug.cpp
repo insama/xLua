@@ -3,14 +3,12 @@
 // Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
 // https://opensource.org/licenses/BSD-3-Clause
 // Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
-#include <string>
-#include <sstream>
-#include <tuple>
+
 #include "libpdebug.h"
 #include <ctime>
 #include <list>
 #include <map>
-#include <cstring>
+#include <string>
 
 //using namespace std;
 static int cur_run_state = 0;       //当前运行状态， c 和 lua 都可能改变这个状态，要保持同步
@@ -33,6 +31,8 @@ const char* last_source;
 int ar_current_line = 0;
 int ar_def_line = 0;
 int ar_lastdef_line = 0;
+int bp_twice_check_res = 1;
+int lua_debugger_ver = 0;             // luapanda.lua的版本，便于做向下兼容
 struct path_transfer_node;
 struct breakpoint;
 // 路径缓存队列 getinfo -> format
@@ -105,12 +105,7 @@ struct debug_auto_stack {
     lua_State* L;
     int top;
 };
-template < typename T > std::string to_string( const T& n )
-{
-    std::ostringstream ss;
-    ss << n ;
-    return ss.str() ;
-}
+
 //内部方法声明
 void debug_hook_c(lua_State *L, lua_Debug *ar);
 void check_hook_state(lua_State *L, const char* source, int current_line, int def_line, int last_line, int event = -1);
@@ -130,7 +125,7 @@ void print_all_breakpoint_map(lua_State *L, int print_level = 0) {
         log_message += '\n';
         for (iter2 = iter1->second.begin(); iter2 != iter1->second.end(); ++iter2) {
             log_message += std::string("    line: ");
-            log_message += to_string(iter2->first);
+            log_message += std::to_string(iter2->first);
             log_message += std::string("  type: ");
             switch (iter2->second.type) {
                 case CONDITION_BREAKPOINT:
@@ -150,7 +145,7 @@ void print_all_breakpoint_map(lua_State *L, int print_level = 0) {
 
                 default:
                     log_message += std::string("Invalid breakpoint type!");
-                    log_message += to_string(iter2->second.type);
+                    log_message += std::to_string(iter2->second.type);
                     break;
             }
             log_message += '\n';
@@ -197,7 +192,7 @@ template <typename ... ARGS>
 int call_lua_function(lua_State *L, const char * lua_function_name, int retCount , ARGS... args){
     lua_getglobal(L, LUA_DEBUGGER_NAME);
     if (!lua_istable(L, -1)) {
-        const char *err_msg = "[Debug Lib Error]:call_lua_function Get LUA_DEBUGGER_NAME error.\n";
+        const char *err_msg = "[C Module Error]:call_lua_function Get LUA_DEBUGGER_NAME error.\n";
         print_to_vscode(L, err_msg, 2);
         return -1;
     }
@@ -205,7 +200,7 @@ int call_lua_function(lua_State *L, const char * lua_function_name, int retCount
     lua_getfield(L, -1, lua_function_name);
     if (!lua_isfunction(L, -1)) {
         char err_msg[100];
-        snprintf(err_msg, sizeof(err_msg), "[Debug Lib Error]:call_lua_function Get lua function '%s' error\n.", lua_function_name);
+        snprintf(err_msg, sizeof(err_msg), "[C Module Error]:call_lua_function Get lua function '%s' error\n.", lua_function_name);
         print_to_vscode(L, err_msg, 2);
         return -1;
     }
@@ -215,7 +210,7 @@ int call_lua_function(lua_State *L, const char * lua_function_name, int retCount
     if (err_code) {
         char err_msg[1024];
         const char *lua_error = lua_tostring(L, -1);
-        snprintf(err_msg, sizeof(err_msg), "[Debug Lib Error]:call_lua_function Call '%s' error. ErrorCode: %d, ErrorMessage: %s.\n", lua_function_name, err_code, lua_error);
+        snprintf(err_msg, sizeof(err_msg), "[C Module Error]:call_lua_function Call '%s' error. ErrorCode: %d, ErrorMessage: %s.\n", lua_function_name, err_code, lua_error);
         print_to_vscode(L, err_msg, 2);
         lua_pop(L, 1);
         return err_code;
@@ -247,6 +242,13 @@ extern "C" int get_last_source(lua_State *L)
     return 1;
 }
 
+//同步luapanda.lua的版本号
+extern "C" int sync_lua_debugger_ver(lua_State *L)
+{
+    lua_debugger_ver = static_cast<int>(luaL_checkinteger(L, 1));
+    return 0;
+}
+
 //同步断点命中标识
 extern "C" int sync_bp_hit(lua_State *L) {
     if(cur_hook_state == DISCONNECT_HOOK){
@@ -272,10 +274,17 @@ extern "C" int sync_tempfile_path(lua_State *L) {
     return 0;
 }
 
+
+//同步临时文件路径
+extern "C" int set_bp_twice_check_res(lua_State *L) {
+    bp_twice_check_res = luaL_checknumber(L, 1);
+    return 0;
+}
+
 //lua 获取版本号
 extern "C" int sync_getLibVersion(lua_State *L) {
     lua_pushstring(L, HOOK_LIB_VERSION);
-    lua_pushnumber(L, LUA_VERSION_NUM);
+	lua_pushnumber(L, LUA_VERSION_NUM);
     return 2;
 }
 
@@ -289,14 +298,14 @@ extern "C" int sync_file_ext(lua_State *L) {
 //debugger路径
 extern "C" int sync_debugger_path(lua_State *L) {
     debug_file_path = luaL_checkstring(L, 1);
-    debug_file_path_len = strlen(debug_file_path);
+	debug_file_path_len = strlen(debug_file_path);
     return 0;
 }
 
 //tools路径
 extern "C" int sync_tools_path(lua_State *L) {
     tools_file_path = luaL_checkstring(L, 1);
-    tools_file_path_len = strlen(tools_file_path);
+	tools_file_path_len = strlen(tools_file_path);
     return 0;
 }
 
@@ -358,7 +367,7 @@ const char* getPath(lua_State *L,const char* source){
     debug_auto_stack _tt(L);
 
     if(source == nullptr){
-        print_to_vscode(L, "[Debug Lib Error]: getPath Exception: source == nullptr", 2);
+        print_to_vscode(L, "[C Module Error]: getPath Exception: source == nullptr", 2);
         return "";
     }
 
@@ -383,19 +392,37 @@ const char* getPath(lua_State *L,const char* source){
     return retSource;
 }
 
+// 向 lua 中 checkRealHitBreakpoint 查询是否在缓存中，以判断是否真正命中断点
+const int checkRealHitBreakpoint(lua_State *L,const char* source, int line){
+    debug_auto_stack _tt(L);
+
+    if(source == nullptr){
+        print_to_vscode(L, "[C Module Error]: checkRealHitBreakpoint Exception: source == nullptr", 2);
+        return 0;
+    }
+
+    //若缓存中没有，到lua中转换
+    int lua_ret = call_lua_function(L, "checkRealHitBreakpoint", 1 , source, line);
+    if (lua_ret != 0) {
+        return 0;
+    }
+    int realHit = lua_toboolean(L, -1);
+    return realHit;
+}
+
 //供lua调用,把断点列表同步给c端
 extern "C" int sync_breakpoints(lua_State *L) {
     debug_auto_stack _tt(L);
     //取数组
     lua_getglobal(L, LUA_DEBUGGER_NAME);     //-1 LuaPanda
     if (!lua_istable(L, -1)) {
-        print_to_vscode(L, "[Debug Lib Error] debug_ishit_bk get LUA_DEBUGGER_NAME error", 2);
+        print_to_vscode(L, "[C Module Error] debug_ishit_bk get LUA_DEBUGGER_NAME error", 2);
         return -1;
     }
 
     lua_getfield(L, -1, "breaks");
     if (!lua_istable(L, -1)) {
-        print_to_vscode(L, "[Debug Lib Error] debug_ishit_bk get breaks error", 2);
+        print_to_vscode(L, "[C Module Error] debug_ishit_bk get breaks error", 2);
         return -1;
     }
 
@@ -409,52 +436,107 @@ extern "C" int sync_breakpoints(lua_State *L) {
         std::map<int, breakpoint> file_breakpoint_map;
         lua_pushnil(L);//k，v, nil
         while (lua_next(L, -2)) {
-            //k,v,k,v
-            lua_getfield(L, -1, "line");            //k,v,k,v,line
-            int line = (int)lua_tointeger(L, -1);
-            lua_pop(L, 1); // line
-
-            lua_getfield(L, -1, "type");
-            int type = (int)lua_tointeger(L, -1);
-            lua_pop(L, 1); // type
-
-            struct breakpoint bp;
-            switch (type) {
-                case CONDITION_BREAKPOINT: {
-                    bp.type = CONDITION_BREAKPOINT;
-
-                    lua_getfield(L, -1, "condition");
-                    const char* condition = luaL_checkstring(L, -1);
-                    lua_pop(L, 1); // condition
-                    bp.info = condition;
-                    break;
+            if(lua_debugger_ver >= 30150){
+                lua_pushnil(L);//k，v, nil
+                while (lua_next(L, -2)) {
+                    //k,v,k,v
+                    lua_getfield(L, -1, "line");            //k,v,k,v,line
+                    int line = (int)lua_tointeger(L, -1);
+                    lua_pop(L, 1); // line
+                    
+                    lua_getfield(L, -1, "type");
+                    int type = (int)lua_tointeger(L, -1);
+                    lua_pop(L, 1); // type
+                    
+                    struct breakpoint bp;
+                    switch (type) {
+                        case CONDITION_BREAKPOINT: {
+                            bp.type = CONDITION_BREAKPOINT;
+                            
+                            lua_getfield(L, -1, "condition");
+                            const char* condition = luaL_checkstring(L, -1);
+                            lua_pop(L, 1); // condition
+                            bp.info = condition;
+                            break;
+                        }
+                            
+                        case LOG_POINT: {
+                            bp.type = LOG_POINT;
+                            
+                            lua_getfield(L, -1, "logMessage");
+                            const char* log_message = luaL_checkstring(L, -1);
+                            lua_pop(L, 1); // logMessage
+                            bp.info = log_message;
+                            break;
+                        }
+                            
+                        case LINE_BREAKPOINT:
+                            bp.type = LINE_BREAKPOINT;
+                            
+                            bp.info = std::to_string(line);
+                            break;
+                            
+                        default:
+                            print_to_vscode(L, "[C Module Error] Invalid breakpoint type!", 2);
+                            return -1;
+                    }
+                    
+                    file_breakpoint_map[line] = bp;
+                    
+                    lua_pop(L, 1);//value
+                    //k,v,k
                 }
-
-                case LOG_POINT: {
-                    bp.type = LOG_POINT;
-
-                    lua_getfield(L, -1, "logMessage");
-                    const char* log_message = luaL_checkstring(L, -1);
-                    lua_pop(L, 1); // logMessage
-                    bp.info = log_message;
-                    break;
+                lua_pop(L, 1);//value
+            }else{
+                // 兼容 < 3.1.5 版本的luapanda.lua
+                
+                //k,v,k,v
+                lua_getfield(L, -1, "line");            //k,v,k,v,line
+                int line = (int)lua_tointeger(L, -1);
+                lua_pop(L, 1); // line
+                
+                lua_getfield(L, -1, "type");
+                int type = (int)lua_tointeger(L, -1);
+                lua_pop(L, 1); // type
+                
+                struct breakpoint bp;
+                switch (type) {
+                    case CONDITION_BREAKPOINT: {
+                        bp.type = CONDITION_BREAKPOINT;
+                        
+                        lua_getfield(L, -1, "condition");
+                        const char* condition = luaL_checkstring(L, -1);
+                        lua_pop(L, 1); // condition
+                        bp.info = condition;
+                        break;
+                    }
+                        
+                    case LOG_POINT: {
+                        bp.type = LOG_POINT;
+                        
+                        lua_getfield(L, -1, "logMessage");
+                        const char* log_message = luaL_checkstring(L, -1);
+                        lua_pop(L, 1); // logMessage
+                        bp.info = log_message;
+                        break;
+                    }
+                        
+                    case LINE_BREAKPOINT:
+                        bp.type = LINE_BREAKPOINT;
+                        
+                        bp.info = std::to_string(line);
+                        break;
+                        
+                    default:
+                        print_to_vscode(L, "[C Module Error] Invalid breakpoint type!", 2);
+                        return -1;
                 }
-
-                case LINE_BREAKPOINT:
-                    bp.type = LINE_BREAKPOINT;
-
-                    bp.info = to_string(line);
-                    break;
-
-                default:
-                    print_to_vscode(L, "[Debug Lib Error] Invalid breakpoint type!", 2);
-                    return -1;
+                
+                file_breakpoint_map[line] = bp;
+                
+                lua_pop(L, 1);//value
+ 
             }
-
-            file_breakpoint_map[line] = bp;
-
-            lua_pop(L, 1);//value
-            //k,v,k
         }
         all_breakpoint_map[std::string(source)] = file_breakpoint_map;
         //k,v
@@ -470,9 +552,8 @@ extern "C" int sync_breakpoints(lua_State *L) {
 
 //断点命中判断
 int debug_ishit_bk(lua_State *L, const char * curPath, int current_line) {
-    print_to_vscode(L, "debug_ishit_bk\n");
     debug_auto_stack _tt(L);
-
+    // 获取标准路径[文件名.后缀]
     const char *standardPath = getPath(L, curPath);
     // 判断是否存在同名文件
     std::map<std::string, std::map<int, struct breakpoint>>::const_iterator const_iter1 = all_breakpoint_map.find(std::string(standardPath));
@@ -480,37 +561,51 @@ int debug_ishit_bk(lua_State *L, const char * curPath, int current_line) {
         return 0;
     }
 
+    // c++ all_breakpoint_map 的数据结构保持不变，和lua不一样
     // 根据是否存在相同行号
     std::map<int, struct breakpoint>::const_iterator const_iter2 = const_iter1->second.find(current_line);
     if (const_iter2 == const_iter1->second.end()) {
         return 0;
     }
 
-    // 条件断点
-    if (const_iter2->second.type == CONDITION_BREAKPOINT) {
-        std::string condition = const_iter2->second.info;
-        int lua_ret = call_lua_function(L, "IsMeetCondition", 1, condition.c_str());
+    if(lua_debugger_ver >= 30160){
+        // luapanda.lua >= 3.1.6 才会调用
+        // 初步命中，到lua层中检测是否真正命中，以及断点类型
+        int lua_ret = call_lua_function(L, "isHitBreakpoint", 1, standardPath, curPath, current_line);
         if (lua_ret != 0) {
+            // 调用出错时，按命中处理
+            return 1;
+        }
+        
+        int realHit = lua_toboolean(L, -1);
+        return realHit;
+    }else{
+        // 兼容旧版本
+        // 条件断点
+        if (const_iter2->second.type == CONDITION_BREAKPOINT) {
+            std::string condition = const_iter2->second.info;
+            int lua_ret = call_lua_function(L, "IsMeetCondition", 1, condition.c_str());
+            if (lua_ret != 0) {
+                return 0;
+            }
+            // if (!lua_isboolean(L, -1)) {
+            //     print_to_vscode(L, "[Debug Lib Error] debug_ishit_bk process condition expression result error!", 2);
+            //     return 0;
+            // }
+            int is_meet_condition = lua_toboolean(L, -1);
+            lua_pop(L, 1);
+            return is_meet_condition;
+        }
+        
+        // 记录点
+        if (const_iter2->second.type == LOG_POINT) {
+            std::string log_message = "[log point output]: ";
+            log_message.append(const_iter2->second.info);
+            print_to_vscode(L, log_message.c_str() , 1);
             return 0;
         }
-        // if (!lua_isboolean(L, -1)) {
-        //     print_to_vscode(L, "[Debug Lib Error] debug_ishit_bk process condition expression result error!", 2);
-        //     return 0;
-        // }
-        int is_meet_condition = lua_toboolean(L, -1);
-        lua_pop(L, 1);
-        return is_meet_condition;
+        return 1;
     }
-
-    // 记录点
-    if (const_iter2->second.type == LOG_POINT) {
-        std::string log_message = "[log point output]: ";
-        log_message.append(const_iter2->second.info);
-        print_to_vscode(L, log_message.c_str() , 1);
-        return 0;
-    }
-
-    return 1;
 }
 
 //判断字符串是否匹配[string "
@@ -528,16 +623,32 @@ int breakpoint_process(lua_State *L, lua_Debug *ar){
     int is_hit = 0;
     if (ar->event == LINE) {
         is_hit = debug_ishit_bk(L, ar->source, ar->currentline);
+        // 同名文件可能会命中假断点 folder1/a.lua 和 folder2/a.lua 截取文件名都是 a.lua, 可能导致命中混淆
+        if(is_hit && lua_debugger_ver >= 30160){
+            // luapanda.lua >= 3.1.6 版本才会调用
+            is_hit = checkRealHitBreakpoint(L, ar->source, ar->currentline);
+        }
 
         if (is_hit == 1 || BPhit) {
-            BPhit = 0;
-            print_to_vscode(L, "bk HIT");
-
+            print_to_vscode(L, "[C Module] Breakpoint hit!");
+            int record_stackdeep_counter = stackdeep_counter;
+            int record_cur_run_state = cur_run_state;
             stackdeep_counter = 0;
             sync_runstate_toLua(L, HIT_BREAKPOINT);
+            bp_twice_check_res = 1;
             //c层掌握 STEPOVER 计数器，状态机放在lua层，c主要去读（毕竟C作为lua的扩展）
             //通知lua层,lua层阻塞，发消息
-            call_lua_function(L, "SendMsgWithStack", 0, "stopOnBreakpoint");
+            if(BPhit){
+                BPhit = 0;
+                call_lua_function(L, "SendMsgWithStack", 0, "stopOnCodeBreakpoint");
+            }else{
+                call_lua_function(L, "SendMsgWithStack", 0, "stopOnBreakpoint");
+                if( bp_twice_check_res == 0 ){
+                    is_hit = 0;
+                    stackdeep_counter = record_stackdeep_counter;
+                    sync_runstate_toLua(L, record_cur_run_state);
+                }
+            }
         }
     }
     return is_hit;
@@ -586,6 +697,7 @@ void step_process(lua_State *L, lua_Debug *ar){
     }
 }
 
+// 无需reconnect返回1 ，需要重连时返回0
 int hook_process_reconnect(lua_State *L){
     time_t currentSecs = time(static_cast<time_t*>(NULL));
     if(cur_hook_state == DISCONNECT_HOOK){
@@ -648,9 +760,9 @@ int hook_process_code_section(lua_State *L, lua_Debug *ar){
 int checkHasBreakpoint(lua_State *L, const char * src1, int current_line, int sline , int eline){
     debug_auto_stack tt(L);
 
-    const char *src = getPath(L, src1);
+	const char *src = getPath(L, src1);
     if(!strcmp(src,"")){
-        // 路径完全一致
+		// 路径完全一致
         return ALL_HOOK;
     }
 
@@ -705,22 +817,22 @@ void debug_hook_c(lua_State *L, lua_Debug *ar) {
     if (lua_getinfo(L, "Slf", ar) != 0) {
         //if in c function , return
         if(!hook_process_cfunction(L, ar)) return;
-        //if in debugger , return   
-        int source_len = strlen(ar->source);
-        if (debug_file_path_len == source_len) {
-            if (!strcmp(debug_file_path, ar->source))   return;
-        }
-        if (tools_file_path_len == source_len) {
-            if (!strcmp(tools_file_path, ar->source))   return;
-        }
-        //slua "temp buffer"
-        if (11 == source_len) {
-            if (!strcmp("temp buffer", ar->source)) return;
-        }
-        //xlua "chunk"
-        if (5 == source_len) {
-            if (!strcmp("chunk", ar->source))   return;
-        }
+        //if in debugger , return	
+		int source_len = strlen(ar->source);
+		if (debug_file_path_len == source_len) {
+			if (!strcmp(debug_file_path, ar->source))	return;
+		}
+		if (tools_file_path_len == source_len) {
+			if (!strcmp(tools_file_path, ar->source))	return;
+		}
+		//slua "temp buffer"
+		if (11 == source_len) {
+			if (!strcmp("temp buffer", ar->source))	return;
+		}
+		//xlua "chunk"
+		if (5 == source_len) {
+			if (!strcmp("chunk", ar->source))	return;
+		}
 
         //code section
         if(!hook_process_code_section(L, ar)) return;
@@ -783,6 +895,8 @@ static luaL_Reg libpdebug[] = {
     { "get_libhook_state", get_libhook_state },
     { "get_last_source", get_last_source },
     { "clear_pathcache", clear_pathcache },
+    { "set_bp_twice_check_res", set_bp_twice_check_res },
+    { "sync_lua_debugger_ver", sync_lua_debugger_ver },
     { NULL, NULL }
 };
 
@@ -895,7 +1009,7 @@ struct LuaCppBinding<void(T::*)(ARGS...), F> {
 #endif // LUA_VERSION_NUM > 501
 
 void Slua_UE_find_function()
-{       //slua - ue Lua 5.3
+{		//slua - ue Lua 5.3
 #if LUA_VERSION_NUM > 501
 #define SLUABINDING(f) LuaCppBinding<decltype(f), f>::luaCFunction;
     lua_version = SLUABINDING(&slua::LuaInterface::lua_version);
@@ -928,7 +1042,7 @@ void general_find_function() {
     lua_pcall = (luaDLL_pcall)GetProcAddress(hInstLibrary, "lua_pcall");//501
     lua_tointeger = (luaDLL_tointeger)GetProcAddress(hInstLibrary, "lua_tointeger");//501
 #endif
-    luaL_checkinteger = (luaDLL_checkinteger)GetProcAddress(hInstLibrary, "luaL_checkinteger");
+	luaL_checkinteger = (luaDLL_checkinteger)GetProcAddress(hInstLibrary, "luaL_checkinteger");
     lua_version = (luaDLL_version)GetProcAddress(hInstLibrary, "lua_version");
     lua_pushstring = (luaDLL_pushstring)GetProcAddress(hInstLibrary, "lua_pushstring");
     lua_gettop = (luaDLL_gettop)GetProcAddress(hInstLibrary, "lua_gettop");
@@ -970,7 +1084,7 @@ void load(lua_State* L) {
     {
 #if LUA_VERSION_NUM > 501
         // find slua-ue dll
-        dll_GetLuaInterface interPtr = (dll_GetLuaInterface)GetProcAddress(mi.hModule, "GetLuaInterface");
+		dll_GetLuaInterface interPtr = (dll_GetLuaInterface)GetProcAddress(mi.hModule, "GetLuaInterface");
         if (interPtr != NULL) {
             hInstLibrary = mi.hModule;
             getInter = interPtr;
@@ -978,7 +1092,7 @@ void load(lua_State* L) {
             break;
         }
 #endif
-        // find general lua dll
+		// find general lua dll
         void* versionPtr = (luaDLL_sethook)GetProcAddress(mi.hModule, "lua_sethook");
         if (versionPtr != NULL) {
             hInstLibrary = mi.hModule;

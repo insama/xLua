@@ -3,11 +3,11 @@
 
 //1.使用源码编译，要打开宏USE_SOURCE_CODE.  win下要设置LUA_INTEGER和lua版本号
 #define LUA_DEBUGGER_NAME     "LuaPanda"    //debugger's name in LuaDebug.lua
-#define HOOK_LIB_VERSION      "3.0.0"       //lib version
+#define HOOK_LIB_VERSION      "3.2.0"       //lib version
 //#define USE_SOURCE_CODE                        //using source code to build
 #if !defined(USE_SOURCE_CODE) && defined(_WIN32)
 #define LUA_INTEGER         long long      //set LUA_INTEGER. In 501 is ptrdiff_t. 503 can set longlong(64bit) or int(32bit)
-#define LUA_VERSION_NUM        503              //lua version used by WIN32 build lib. eg. 501,503
+#define LUA_VERSION_NUM        504              //lua version used by WIN32 build lib. eg. 501,503
 #endif
 //setting end
 
@@ -74,6 +74,7 @@ extern "C" void pdebug_init(lua_State* L);
 #define lua_newtable(L)        lua_createtable(L, 0, 0)
 
 struct lua_State;
+#if LUA_VERSION_NUM <= 503
 struct lua_Debug {
     int event;
     const char *name;    /* (n) */
@@ -88,6 +89,28 @@ struct lua_Debug {
     /* private part */
     int i_ci;  /* active function */
 };
+#else
+struct lua_Debug {
+  int event;
+  const char *name;	/* (n) */
+  const char *namewhat;	/* (n) 'global', 'local', 'field', 'method' */
+  const char *what;	/* (S) 'Lua', 'C', 'main', 'tail' */
+  const char *source;	/* (S) */
+  size_t srclen;	/* (S) */
+  int currentline;	/* (l) */
+  int linedefined;	/* (S) */
+  int lastlinedefined;	/* (S) */
+  unsigned char nups;	/* (u) number of upvalues */
+  unsigned char nparams;/* (u) number of parameters */
+  char isvararg;        /* (u) */
+  char istailcall;	/* (t) */
+  unsigned short ftransfer;   /* (r) index of first value transferred */
+  unsigned short ntransfer;   /* (r) number of transferred values */
+  char short_src[LUA_IDSIZE]; /* (S) */
+  /* private part */
+  int *i_ci;  /* active function */
+};
+#endif //lua_Debug
 
 typedef LUA_INTEGER lua_Integer;
 typedef LUA_NUMBER lua_Number;
