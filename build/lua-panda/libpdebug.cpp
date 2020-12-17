@@ -9,6 +9,7 @@
 #include <list>
 #include <map>
 #include <string>
+#include <sstream>
 
 //using namespace std;
 static int cur_run_state = 0;       //当前运行状态， c 和 lua 都可能改变这个状态，要保持同步
@@ -112,6 +113,14 @@ void check_hook_state(lua_State *L, const char* source, int current_line, int de
 void print_to_vscode(lua_State *L, const char* msg, int level = 0);
 void load(lua_State* L);
 
+template <typename T>
+std::string to_string(T value)
+{
+    std::ostringstream os ;
+    os << value ;
+    return os.str() ;
+}
+
 //打印断点信息
 void print_all_breakpoint_map(lua_State *L, int print_level = 0) {
     if (print_level < logLevel) {
@@ -125,7 +134,7 @@ void print_all_breakpoint_map(lua_State *L, int print_level = 0) {
         log_message += '\n';
         for (iter2 = iter1->second.begin(); iter2 != iter1->second.end(); ++iter2) {
             log_message += std::string("    line: ");
-            log_message += std::to_string(iter2->first);
+            log_message += to_string(iter2->first);
             log_message += std::string("  type: ");
             switch (iter2->second.type) {
                 case CONDITION_BREAKPOINT:
@@ -145,7 +154,7 @@ void print_all_breakpoint_map(lua_State *L, int print_level = 0) {
 
                 default:
                     log_message += std::string("Invalid breakpoint type!");
-                    log_message += std::to_string(iter2->second.type);
+                    log_message += to_string(iter2->second.type);
                     break;
             }
             log_message += '\n';
@@ -473,7 +482,7 @@ extern "C" int sync_breakpoints(lua_State *L) {
                         case LINE_BREAKPOINT:
                             bp.type = LINE_BREAKPOINT;
                             
-                            bp.info = std::to_string(line);
+                            bp.info = to_string(line);
                             break;
                             
                         default:
@@ -524,7 +533,7 @@ extern "C" int sync_breakpoints(lua_State *L) {
                     case LINE_BREAKPOINT:
                         bp.type = LINE_BREAKPOINT;
                         
-                        bp.info = std::to_string(line);
+                        bp.info = to_string(line);
                         break;
                         
                     default:
