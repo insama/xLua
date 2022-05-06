@@ -701,7 +701,8 @@ push_value(lua_State *L, int type, const char * type_name, union pbc_value *v) {
 		lua_pushboolean(L, v->i.low);
 		break;
 	case PBC_ENUM:
-		lua_pushstring(L, v->e.name);
+		// lua_pushstring(L, v->e.name);
+		lua_pushnumber(L, v->e.id);
 		break;
 	case PBC_BYTES:
 	case PBC_STRING:
