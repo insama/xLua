@@ -8,8 +8,8 @@ call msvcbuild_mt.bat static
 cd ..\..
 
 mkdir build_lj64 & pushd build_lj64
-cmake -DUSING_LUAJIT=ON -G "Visual Studio 16 2019" -A "Win64" ..
-IF %ERRORLEVEL% NEQ 0 cmake -DUSING_LUAJIT=ON -G "Visual Studio 16 2019" -A "Win64" ..
+cmake -DUSING_LUAJIT=ON -G "Visual Studio 16 2019" -A "x64" ..
+IF %ERRORLEVEL% NEQ 0 cmake -DUSING_LUAJIT=ON -G "Visual Studio 16 2019" -A "x64" ..
 popd
 cmake --build build_lj64 --config Release
 md plugin_luajit\Plugins\x86_64
