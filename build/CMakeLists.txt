@@ -102,23 +102,23 @@ set (THIRDPART_SRC ${THIRDPART_SRC} ${LPB_SRC})
 # set (THIRDPART_SRC ${THIRDPART_SRC} ${PBC_SRC})
 # #end pbc
 
-#begin lpeg
-set ( LPEG_SRC
-    lpeg/lpcap.c
-    lpeg/lpcode.c
-    lpeg/lpprint.c
-    lpeg/lptree.c
-    lpeg/lpvm.c
-)
-set_property(
-    SOURCE ${LPEG_SRC}
-    APPEND
-    PROPERTY COMPILE_DEFINITIONS
-    LUA_LIB
-)
-list(APPEND THIRDPART_INC  lpeg)
-set (THIRDPART_SRC ${THIRDPART_SRC} ${LPEG_SRC})
-#end lpeg
+# #begin lpeg
+# set ( LPEG_SRC
+#     lpeg/lpcap.c
+#     lpeg/lpcode.c
+#     lpeg/lpprint.c
+#     lpeg/lptree.c
+#     lpeg/lpvm.c
+# )
+# set_property(
+#     SOURCE ${LPEG_SRC}
+#     APPEND
+#     PROPERTY COMPILE_DEFINITIONS
+#     LUA_LIB
+# )
+# list(APPEND THIRDPART_INC  lpeg)
+# set (THIRDPART_SRC ${THIRDPART_SRC} ${LPEG_SRC})
+# #end lpeg
 
 #begin lua-random
 set ( LRANDOM_SRC
@@ -148,30 +148,31 @@ set (THIRDPART_SRC ${THIRDPART_SRC} ${LUA_PANDA_SRC})
 #end lua-panda
 
 
-#begin lua-sproto
- set (SPROTO_SRC sproto/sproto.c sproto/lsproto.c)
- set_property(
-     SOURCE ${SPROTO_SRC}
-     APPEND
-     PROPERTY COMPILE_DEFINITIONS
-     LUA_LIB
- )
- list(APPEND THIRDPART_INC sproto)
- set (THIRDPART_SRC ${THIRDPART_SRC} ${SPROTO_SRC})
-#end lua-sproto
+# #begin lua-sproto
+#  set (SPROTO_SRC sproto/sproto.c sproto/lsproto.c)
+#  set_property(
+#      SOURCE ${SPROTO_SRC}
+#      APPEND
+#      PROPERTY COMPILE_DEFINITIONS
+#      LUA_LIB
+#  )
+#  list(APPEND THIRDPART_INC sproto)
+#  set (THIRDPART_SRC ${THIRDPART_SRC} ${SPROTO_SRC})
+# #end lua-sproto
 
 
-#begin lua-crypt
-set (LUA_CRYPT lua-crypt/lua-crypt.c lua-crypt/lsha1.c)
-set_property(
-     SOURCE ${LUA_CRYPT}
-     APPEND
-     PROPERTY COMPILE_DEFINITIONS
-     LUA_LIB
-)
+# #begin lua-crypt
+# set (LUA_CRYPT lua-crypt/lua-crypt.c lua-crypt/lsha1.c)
+# set_property(
+#      SOURCE ${LUA_CRYPT}
+#      APPEND
+#      PROPERTY COMPILE_DEFINITIONS
+#      LUA_LIB
+# )
  
-set (THIRDPART_SRC ${THIRDPART_SRC} ${LUA_CRYPT})
-#end lua-crypt
+# set (THIRDPART_SRC ${THIRDPART_SRC} ${LUA_CRYPT})
+# #end lua-crypt
+
 if (USING_LUAJIT)
 	
     if (APPLE AND NOT IOS AND NOT ANDROID)
