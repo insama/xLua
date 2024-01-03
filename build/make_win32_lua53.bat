@@ -1,7 +1,7 @@
 mkdir build32 & pushd build32
-cmake -DLUAC_COMPATIBLE_FORMAT=ON -DDISABLE_SOURCECODE=ON -G "Visual Studio 16 2019" ..
+cmake -G "Visual Studio 16 2019" -A Win32 ..
 popd
 cmake --build build32 --config Release
-md plugin_lua53\Plugins\Windows\x86
-copy /Y build32\Release\xlua.dll plugin_lua53\Plugins\Windows\x86\xlua.dll
+md plugin_lua53\Plugins\x86
+copy /Y build32\Release\xlua.dll plugin_lua53\Plugins\x86\xlua.dll
 pause

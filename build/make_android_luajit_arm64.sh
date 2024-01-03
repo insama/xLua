@@ -1,6 +1,6 @@
-if [ -z "$ANDROID_NDK" ]; then
+#if [ -z "$ANDROID_NDK" ]; then
     export ANDROID_NDK=~/android-ndk-r15c
-fi
+#fi
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SRCDIR=$DIR/luajit-2.1.0b3
@@ -63,6 +63,6 @@ mkdir -p build_lj_x86 && cd build_lj_x86
 cmake -DUSING_LUAJIT=ON -DANDROID_ABI=x86 -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake -DANDROID_TOOLCHAIN_NAME=x86-clang -DANDROID_NATIVE_API_LEVEL=android-21 ../
 cd "$DIR"
 cmake --build build_lj_x86 --config Release
-mkdir -p plugin_luajit/Plugins/Android/libs/arm64-v8a/
-cp build_lj_x86/libxlua.so plugin_luajit/Plugins/Android/libs/arm64-v8a/libxlua.so
+mkdir -p plugin_luajit/Plugins/Android/libs/x86/
+cp build_lj_x86/libxlua.so plugin_luajit/Plugins/Android/libs/x86/libxlua.so
 

@@ -1,7 +1,7 @@
 ![](Assets/XLua/Doc/xLua.png)
 
 [![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Tencent/xLua/blob/master/LICENSE.TXT)
-[![release](https://img.shields.io/badge/release-v2.1.14-blue.svg)](https://github.com/Tencent/xLua/releases)
+[![release](https://img.shields.io/badge/release-v2.1.15-blue.svg)](https://github.com/Tencent/xLua/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blue.svg)](https://github.com/Tencent/xLua/pulls)
 [![Build status](https://travis-ci.org/Tencent/xLua.svg?branch=master)](https://travis-ci.org/Tencent/xLua)
 
@@ -13,13 +13,13 @@ xLua adds Lua scripting capability to Unity, .Net, Mono, and other C# environmen
 
 xLua has many breakthroughs in function, performance, and ease of use. The most significant features are:
 
-* You can inplace C# implementations (methods, operators, properties, events, etc...) by Lua's during runtime.
-* Outstanding GC optimization, customized struct, no C# gc alloc when passing the enumerated objects between C# and lua;
+* You can use C# implementations (methods, operators, properties, events, etc...) in Lua.
+* Outstanding GC optimization, customized struct, no C# gc alloc when passing the enumerated objects between C# and Lua;
 * Lightweight development with no needs to generate code in editor mode;
 
 ## Installation
 
-Unpack the zip package and you will see an Assets directory, which corresponds to the Unity project's Assets directory. Keep the directory structure in your Unity project.
+Unpack the ZIP package and you will see an Assets directory, which corresponds to the Unity project's Assets directory. Keep the directory structure in your Unity project.
 
 If you want to install it to another directory, please see the [FAQs](Assets/XLua/Doc/Faq_EN.md).
 
@@ -100,6 +100,8 @@ It is recommended that you bind once and reuse it. If code is generated, no gc a
 QQ Group 1: 612705778 (may be full)
 
 QQ Group 2: 703073338
+
+QQ Group 3: 811246782
 
 Check answers: If you encounter a problem, please read the FAQs first.
 

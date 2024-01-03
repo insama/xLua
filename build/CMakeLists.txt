@@ -4,7 +4,7 @@
 # http://opensource.org/licenses/MIT
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 2.8)
 
 if ( WIN32 AND NOT CYGWIN AND NOT ( CMAKE_SYSTEM_NAME STREQUAL "WindowsStore" ) AND NOT ANDROID)
 	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT" CACHE STRING "")
@@ -24,7 +24,6 @@ option ( UINT_ESPECIALLY "using custom ulong" OFF )
 option ( USING_LUAJIT "using luajit" OFF )
 option ( GC64 "using gc64" OFF )
 option ( LUAC_COMPATIBLE_FORMAT "compatible format" OFF )
-option ( DISABLE_SOURCECODE "disable lua source code" OFF )
 
 find_path(XLUA_PROJECT_DIR NAMES SConstruct
     PATHS 
@@ -42,6 +41,7 @@ set(LUA_SRC_PATH lua-${LUA_VERSION}/src)
 set(LUAJIT_SRC_PATH luajit-2.1.0b3/src)
 
 
+
 #begin lua-rapidjson
 set (RAPIDJSON_SRC lua-rapidjson/source/rapidjson.cpp)
 set_property(
@@ -54,39 +54,53 @@ list(APPEND THIRDPART_INC  lua-rapidjson/include)
 set (THIRDPART_SRC ${THIRDPART_SRC} ${RAPIDJSON_SRC})
 #end lua-rapidjson
 
-#begin pbc
-set (PBC_SRC 
-    pbc/src/alloc.c
-    pbc/src/array.c
-    pbc/src/array.c
-    pbc/src/bootstrap.c
-    pbc/src/context.c
-    pbc/src/decode.c
-    pbc/src/map.c
-    pbc/src/pattern.c
-    pbc/src/proto.c
-    pbc/src/register.c
-    pbc/src/rmessage.c
-    pbc/src/stringpool.c
-    pbc/src/varint.c
-    pbc/src/wmessage.c
+#begin lua-profobuf
+set (LPB_SRC 
+lua-protobuf/pb.c
 )
-
-if (USING_LUAJIT)
-    list(APPEND PBC_SRC pbc pbc/binding/lua/pbc-lua.c)
-else ()
-    list(APPEND PBC_SRC pbc pbc/binding/lua53/pbc-lua53.c)
-endif ()
-
 set_property(
-	SOURCE ${PBC_SRC}
-	APPEND
-	PROPERTY COMPILE_DEFINITIONS
-	LUA_LIB
+SOURCE ${LPB_SRC}
+APPEND
+PROPERTY COMPILE_DEFINITIONS
+LUA_LIB
 )
-list(APPEND THIRDPART_INC pbc pbc/src)
-set (THIRDPART_SRC ${THIRDPART_SRC} ${PBC_SRC})
-#end pbc
+list(APPEND THIRDPART_INC lua-protobuf)
+set (THIRDPART_SRC ${THIRDPART_SRC} ${LPB_SRC})
+#end lua-protobuf
+
+# #begin pbc
+# set (PBC_SRC 
+#     pbc/src/alloc.c
+#     pbc/src/array.c
+#     pbc/src/array.c
+#     pbc/src/bootstrap.c
+#     pbc/src/context.c
+#     pbc/src/decode.c
+#     pbc/src/map.c
+#     pbc/src/pattern.c
+#     pbc/src/proto.c
+#     pbc/src/register.c
+#     pbc/src/rmessage.c
+#     pbc/src/stringpool.c
+#     pbc/src/varint.c
+#     pbc/src/wmessage.c
+# )
+
+# if (USING_LUAJIT)
+#     list(APPEND PBC_SRC pbc pbc/binding/lua/pbc-lua.c)
+# else ()
+#     list(APPEND PBC_SRC pbc pbc/binding/lua53/pbc-lua53.c)
+# endif ()
+
+# set_property(
+# 	SOURCE ${PBC_SRC}
+# 	APPEND
+# 	PROPERTY COMPILE_DEFINITIONS
+# 	LUA_LIB
+# )
+# list(APPEND THIRDPART_INC pbc pbc/src)
+# set (THIRDPART_SRC ${THIRDPART_SRC} ${PBC_SRC})
+# #end pbc
 
 #begin lpeg
 set ( LPEG_SRC
@@ -120,16 +134,6 @@ list(APPEND THIRDPART_INC  lua-random)
 set (THIRDPART_SRC ${THIRDPART_SRC} ${LRANDOM_SRC})
 #end lua-random
 
-#begin proto-gen-lua
-set (PB_SRC lua-proto/pb.c)
-set_property(
-	SOURCE ${PB_SRC}
-	APPEND
-	PROPERTY COMPILE_DEFINITIONS
-	LUA_LIB
-)
-set (THIRDPART_SRC ${THIRDPART_SRC} ${PB_SRC})
-#end proto-gen-lua
 
 #begin lua-panda
 set (LUA_PANDA_SRC lua-panda/libpdebug.cpp)
@@ -168,9 +172,6 @@ set_property(
  
 set (THIRDPART_SRC ${THIRDPART_SRC} ${LUA_CRYPT})
 #end lua-crypt
-
-
-
 if (USING_LUAJIT)
 	
     if (APPLE AND NOT IOS AND NOT ANDROID)
@@ -286,8 +287,9 @@ if (APPLE)
         )
 		set_xcode_property (xlua IPHONEOS_DEPLOYMENT_TARGET "7.0" "all")
     else ()
+        ADD_DEFINITIONS(-DLUA_USE_MACOSX) #osx platform emmylua debugger must have this option or can not load cpath
         if (BUILD_SILICON)
-            set(CMAKE_OSX_ARCHITECTURES arm64)
+           set(CMAKE_OSX_ARCHITECTURES arm64)
 
             add_library(xlua SHARED
                 ${LUA_CORE}
@@ -338,10 +340,6 @@ endif ()
 
 if (LUAC_COMPATIBLE_FORMAT AND NOT USING_LUAJIT)
     target_compile_definitions (xlua PRIVATE LUAC_COMPATIBLE_FORMAT)
-endif ()
-
-if(DISABLE_SOURCECODE)
-    target_compile_definitions (xlua PRIVATE DISABLE_SOURCECODE)
 endif ()
 
 set_property(
