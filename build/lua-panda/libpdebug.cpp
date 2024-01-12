@@ -9,7 +9,6 @@
 #include <list>
 #include <map>
 #include <string>
-#include <sstream>
 
 //using namespace std;
 static int cur_run_state = 0;       //当前运行状态， c 和 lua 都可能改变这个状态，要保持同步
@@ -22,7 +21,7 @@ static int stackdeep_counter = 0;   //step用的栈深度计数器
 static char hookLog[1024] = { 0 };
 const char* debug_file_path;             //debugger的文件路径
 int debug_file_path_len;
-const char* tools_file_path;             //tools的文件路径
+const char* tools_file_path;             //Tools的文件路径
 int tools_file_path_len;
 char config_ext[32] = "";             //后缀（从lua同步）
 const char* config_cwd = "";             //cwd(从lua同步)
@@ -39,7 +38,7 @@ struct breakpoint;
 // 路径缓存队列 getinfo -> format
 std::list<path_transfer_node*> getinfo_to_format_cache;
 // 存放断点map，key为source
-std::map<std::string, std::map<int, breakpoint>> all_breakpoint_map;
+std::map<std::string, std::map<int, breakpoint> > all_breakpoint_map;
 
 enum run_state
 {
@@ -113,20 +112,12 @@ void check_hook_state(lua_State *L, const char* source, int current_line, int de
 void print_to_vscode(lua_State *L, const char* msg, int level = 0);
 void load(lua_State* L);
 
-template <typename T>
-std::string to_string(T value)
-{
-    std::ostringstream os ;
-    os << value ;
-    return os.str() ;
-}
-
 //打印断点信息
 void print_all_breakpoint_map(lua_State *L, int print_level = 0) {
     if (print_level < logLevel) {
         return;
     }
-    std::map<std::string, std::map<int, breakpoint>>::iterator iter1;
+    std::map<std::string, std::map<int, breakpoint> >::iterator iter1;
     std::map<int, breakpoint>::iterator iter2;
     std::string log_message = "[breakpoints in chook:]\n";
     for (iter1 = all_breakpoint_map.begin(); iter1 != all_breakpoint_map.end(); ++iter1) {
@@ -134,7 +125,7 @@ void print_all_breakpoint_map(lua_State *L, int print_level = 0) {
         log_message += '\n';
         for (iter2 = iter1->second.begin(); iter2 != iter1->second.end(); ++iter2) {
             log_message += std::string("    line: ");
-            log_message += to_string(iter2->first);
+            log_message += std::to_string(iter2->first);
             log_message += std::string("  type: ");
             switch (iter2->second.type) {
                 case CONDITION_BREAKPOINT:
@@ -154,7 +145,7 @@ void print_all_breakpoint_map(lua_State *L, int print_level = 0) {
 
                 default:
                     log_message += std::string("Invalid breakpoint type!");
-                    log_message += to_string(iter2->second.type);
+                    log_message += std::to_string(iter2->second.type);
                     break;
             }
             log_message += '\n';
@@ -311,7 +302,7 @@ extern "C" int sync_debugger_path(lua_State *L) {
     return 0;
 }
 
-//tools路径
+//Tools路径
 extern "C" int sync_tools_path(lua_State *L) {
     tools_file_path = luaL_checkstring(L, 1);
 	tools_file_path_len = strlen(tools_file_path);
@@ -482,7 +473,7 @@ extern "C" int sync_breakpoints(lua_State *L) {
                         case LINE_BREAKPOINT:
                             bp.type = LINE_BREAKPOINT;
                             
-                            bp.info = to_string(line);
+                            bp.info = std::to_string(line);
                             break;
                             
                         default:
@@ -533,7 +524,7 @@ extern "C" int sync_breakpoints(lua_State *L) {
                     case LINE_BREAKPOINT:
                         bp.type = LINE_BREAKPOINT;
                         
-                        bp.info = to_string(line);
+                        bp.info = std::to_string(line);
                         break;
                         
                     default:
@@ -565,7 +556,7 @@ int debug_ishit_bk(lua_State *L, const char * curPath, int current_line) {
     // 获取标准路径[文件名.后缀]
     const char *standardPath = getPath(L, curPath);
     // 判断是否存在同名文件
-    std::map<std::string, std::map<int, struct breakpoint>>::const_iterator const_iter1 = all_breakpoint_map.find(std::string(standardPath));
+    std::map<std::string, std::map<int, struct breakpoint> >::const_iterator const_iter1 = all_breakpoint_map.find(std::string(standardPath));
     if (const_iter1 == all_breakpoint_map.end()) {
         return 0;
     }
@@ -780,7 +771,7 @@ int checkHasBreakpoint(lua_State *L, const char * src1, int current_line, int sl
         return LITE_HOOK;
     }
 
-    std::map<std::string, std::map<int, breakpoint>>::iterator iter1;
+    std::map<std::string, std::map<int, breakpoint> >::iterator iter1;
     for (iter1 = all_breakpoint_map.begin(); iter1 != all_breakpoint_map.end(); ++iter1) {
         if (iter1->first == std::string(src)) {
             // compare()
