@@ -112,4 +112,5 @@ Debug.Log("max:" + max(32, 12));
 回答：FAQ
 
 平时也要谨记这答案，90%以上问题都可以在[FAQ](Assets/XLua/Doc/faq.md)里头找到答案。这些问题就别在群刷屏了。
+触发编译
 
