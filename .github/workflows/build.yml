@@ -57,7 +57,7 @@ jobs:
           path: ./build/plugin_lua53/**/*
           name: plugin_lua53   
   osx:
-    runs-on: macos-11
+    runs-on: macos-latest
 
     steps:
       - uses: actions/checkout@v2
