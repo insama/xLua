@@ -10,7 +10,7 @@ jobs:
   android:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
       - name: Install NDK
         run: |
           cd ~
@@ -24,12 +24,12 @@ jobs:
           ./make_android_lua54.sh
           ./make_android_lua53.sh
       - name: Upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           path: ./build/plugin_lua54/**/*
           name: plugin_lua54
       - name: Upload53
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           path: ./build/plugin_lua53/**/*
           name: plugin_lua53 
@@ -40,19 +40,19 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
       - name: Build
         run: |
           cd build
           ./make_ios_lua54.sh
           ./make_ios_lua53.sh
       - name: Upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           path: ./build/plugin_lua54/**/*
           name: plugin_lua54
       - name: Upload53
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           path: ./build/plugin_lua53/**/*
           name: plugin_lua53   
@@ -60,7 +60,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
       - name: Build
         run: |
           cd build
@@ -69,12 +69,12 @@ jobs:
           ./make_osx_silicon_lua53.sh
           ./make_osx_silicon_lua54.sh
       - name: Upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           path: ./build/plugin_lua54/**/*
           name: plugin_lua54
       - name: Upload53
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           path: ./build/plugin_lua53/**/*
           name: plugin_lua53   
@@ -82,7 +82,7 @@ jobs:
     runs-on: windows-2019
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
       
       - name: Insatll MSVC
         uses: microsoft/setup-msbuild@v1.0.2
@@ -97,12 +97,12 @@ jobs:
           .\make_uwp.bat
       - uses: ilammy/msvc-dev-cmd@v1
       - name: Upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           path: ./build/plugin_lua54/**/*
           name: plugin_lua54
       - name: Upload53
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           path: ./build/plugin_lua53/**/*
           name: plugin_lua53   
